@@ -130,7 +130,7 @@ public class Parser {
             System.exit(Errno.combine(Errno.FILE_ERROR, Errno.PARSE_ERROR));
         }
 
-        parser.print();
+        parser.parse();
     }
 
     private static class ScriptErrorHandler implements ErrorHandler {

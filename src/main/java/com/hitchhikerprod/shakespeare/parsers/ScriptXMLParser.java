@@ -1,5 +1,6 @@
 package com.hitchhikerprod.shakespeare.parsers;
 
+import com.hitchhikerprod.shakespeare.text.Script;
 import com.sun.istack.internal.Nullable;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -14,12 +15,16 @@ public abstract class ScriptXMLParser {
 
     private PrintWriter out;
     private Node root;
-    private static Logger logger = Logger.getLogger("ScriptXMLParser");
+    protected static Logger logger = Logger.getLogger("ScriptXMLParser");
 
     protected ScriptXMLParser(PrintWriter out, Node root) {
         this.out = out;
         this.root = root;
     }
+
+    protected Node getRoot() { return root; }
+
+    public abstract Script parse();
 
     public static void print(PrintWriter out, Node root) {
         recursivePrint(out, root, 0);
