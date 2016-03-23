@@ -1,16 +1,8 @@
 package com.hitchhikerprod.shakespeare.parsers;
 
-import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 /**
@@ -18,44 +10,21 @@ import java.io.PrintWriter;
  */
 public class ScriptXMLParser {
 
-    private static PrintWriter out, err;
+    private PrintWriter out;
 
-    public static void usage(int code) {
-        out.println("Usage: shakespeare [options] filename.xml");
-        System.exit(code);
+    ScriptXMLParser(PrintWriter out) {
+        this.out = out;
     }
 
-    private static String parseArgs(String[] args) {
-        String filename = null;
-
-        for (String arg : args) {
-            if (arg.startsWith("--")) {
-                if (arg.equals("--help")) {
-                    usage(0);
-                } else {
-                    System.err.println("Unrecognized switch " + arg);
-                    usage(1);
-                }
-                continue;
-            }
-            if (arg.startsWith("-")) {
-                if (arg.equals("-h")) {
-                    usage(0);
-                } else {
-                    System.err.println("Unrecognized switch " + arg);
-                    usage(1);
-                }
-                continue;
-            }
-
-            filename = arg;
-        }
-
-        if (filename == null) { usage(1); }
-        return filename;
+    public void print(Node root) {
+        recursivePrint(root, 0);
     }
 
-    public static String typeToString(short nodeType) {
+    private void printIndentation(int indent) {
+        for (int i = 0; i < indent; i++) out.print(" ");
+    }
+
+    private static String typeToString(short nodeType) {
         switch (nodeType) {
             case Node.ATTRIBUTE_NODE:
                 return "ATTR";
@@ -86,11 +55,7 @@ public class ScriptXMLParser {
         }
     }
 
-    private static void printIndentation(int indent) {
-        for (short i = 0; i < indent; i++) out.print(" ");
-    }
-
-    private static void recursivePrint(Node n, int indent) {
+    private void recursivePrint(Node n, int indent) {
         short nodeType = n.getNodeType();
         String nodeName = n.getNodeName();
         String nodeValue = n.getNodeValue();
@@ -119,71 +84,11 @@ public class ScriptXMLParser {
 
         if (nodeType != Node.ATTRIBUTE_NODE) {
             for (Node child = n.getFirstChild();
-                    child != null;
-                    child = child.getNextSibling()) {
+                 child != null;
+                 child = child.getNextSibling()) {
                 recursivePrint(child, indent + 2);
             }
         }
     }
 
-    // Folger: DOC > ELMT/TEI > ELMT/text > ELMT/body
-    // Play: DOC > ELMT/play > ELMT/act [num=1]
-
-    public static void main(String[] args) throws Exception {
-        out = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"), true);
-        err = new PrintWriter(new OutputStreamWriter(System.err, "UTF-8"), true);
-
-        String filename = parseArgs(args);
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setCoalescing(true); // merge CDATA and TEXT nodes
-        factory.setExpandEntityReferences(true);
-        factory.setIgnoringComments(true);
-        factory.setIgnoringElementContentWhitespace(true);
-
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        builder.setErrorHandler(new ScriptErrorHandler(err));
-
-        Document root = builder.parse(new File(filename));
-        if (root.getNodeType() != Node.DOCUMENT_NODE) {
-            err.println("Parse error: root document node not found?!");
-            System.exit(2);
-        }
-
-        recursivePrint(root, 0);
-    }
-
-    private static class ScriptErrorHandler implements ErrorHandler {
-        private PrintWriter out;
-
-        ScriptErrorHandler(PrintWriter out) {
-            this.out = out;
-        }
-
-        private String getParseExceptionInfo(SAXParseException spe) {
-            String systemId = spe.getSystemId();
-            if (systemId == null) {
-                systemId = "null";
-            }
-
-            String info = "URI=" + systemId + " Line=" + spe.getLineNumber() +
-                          ": " + spe.getMessage();
-            return info;
-        }
-
-        public void warning(SAXParseException spe) throws SAXException {
-            out.println("Warning: " + getParseExceptionInfo(spe));
-        }
-
-        public void error(SAXParseException spe) throws SAXException {
-            String message = "Error: " + getParseExceptionInfo(spe);
-            throw new SAXException(message);
-        }
-
-        public void fatalError(SAXParseException spe) throws SAXException {
-            String message = "Fatal Error: " + getParseExceptionInfo(spe);
-            throw new SAXException(message);
-        }
-    }
 }
