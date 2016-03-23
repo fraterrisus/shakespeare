@@ -1,5 +1,8 @@
-package com.hitchhikerprod.shakespeare.parsers;
+package com.hitchhikerprod.shakespeare.main;
 
+import com.hitchhikerprod.shakespeare.parsers.FolgerDigitalXMLParser;
+import com.hitchhikerprod.shakespeare.parsers.PlayShakespeareXMLParser;
+import com.hitchhikerprod.shakespeare.parsers.ScriptXMLParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
@@ -15,7 +18,7 @@ import java.io.PrintWriter;
 /**
  * Created by bcordes on 3/22/16.
  */
-public class MainParser {
+public class Parser {
 
     private enum Errno {
         NO_ERROR(0x0),
@@ -104,8 +107,7 @@ public class MainParser {
         ScriptXMLParser parser = null;
 
         if (optPrintMode) {
-            parser = new ScriptXMLParser(out);
-            parser.print(root);
+            ScriptXMLParser.print(out, root);
             System.exit(Errno.NO_ERROR.toShort());
         }
 
@@ -118,18 +120,17 @@ public class MainParser {
         String nodeName = node.getNodeName();
         if (nodeName.equalsIgnoreCase("tei")) {
             err.println("Seems to be a Folger Digital XML file");
-            parser = new FolgerDigitalXMLParser(out, node);
-        }
-        else if (nodeName.equalsIgnoreCase("play")) {
+            parser = FolgerDigitalXMLParser.of(out, node);
+        } else if (nodeName.equalsIgnoreCase("play")) {
             err.println("Seems to be a Play Shakespeare XML file");
-            parser = new PlayShakespeareXMLParser(out, node);
+            parser = PlayShakespeareXMLParser.of(out, node);
         }
         if (parser == null) {
             err.println("Parse error: didn't recognize the document structure, don't know how to parse it");
             System.exit(Errno.combine(Errno.FILE_ERROR, Errno.PARSE_ERROR));
         }
 
-        parser.print(root);
+        parser.print();
     }
 
     private static class ScriptErrorHandler implements ErrorHandler {
